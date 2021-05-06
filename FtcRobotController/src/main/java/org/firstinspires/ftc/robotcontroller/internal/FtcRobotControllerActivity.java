@@ -47,9 +47,6 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.StringRes;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -62,6 +59,7 @@ import android.widget.LinearLayout.LayoutParams;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.google.blocks.ftcrobotcontroller.ProgrammingWebHandlers;
 import com.google.blocks.ftcrobotcontroller.runtime.BlocksOpMode;
 import com.qualcomm.ftccommon.ClassManagerFactory;
@@ -127,11 +125,19 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
+
 @SuppressWarnings("WeakerAccess")
 public class FtcRobotControllerActivity extends Activity
-  {
+{
   public static final String TAG = "RCActivity";
-  public String getTag() { return TAG; }
+
+  public String getTag()
+  {
+    return TAG;
+  }
 
   private static final int REQUEST_CONFIG_WIFI_CHANNEL = 1;
   private static final int NUM_GAMEPADS = 2;
@@ -311,6 +317,7 @@ public class FtcRobotControllerActivity extends Activity
           }
         });
         popupMenu.inflate(R.menu.ftc_robot_controller);
+        FtcDashboard.populateMenu(popupMenu.getMenu());
         popupMenu.show();
       }
     });
@@ -383,6 +390,7 @@ public class FtcRobotControllerActivity extends Activity
 
     // check to see if there is a preferred Wi-Fi to use.
     checkPreferredChannel();
+    FtcDashboard.start();
   }
 
   protected UpdateUI createUpdateUI() {
@@ -451,6 +459,7 @@ public class FtcRobotControllerActivity extends Activity
     if (preferencesHelper != null) preferencesHelper.getSharedPreferences().unregisterOnSharedPreferenceChangeListener(sharedPreferencesListener);
 
     RobotLog.cancelWriteLogcatToDisk();
+    FtcDashboard.stop();
   }
 
   protected void bindToService() {
@@ -516,6 +525,7 @@ public class FtcRobotControllerActivity extends Activity
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     getMenuInflater().inflate(R.menu.ftc_robot_controller, menu);
+    FtcDashboard.populateMenu(menu);
     return true;
   }
 
@@ -532,11 +542,7 @@ public class FtcRobotControllerActivity extends Activity
 
     RobotState robotState = robot.eventLoopManager.state;
 
-    if (robotState != RobotState.RUNNING) {
-      return false;
-    } else {
-      return true;
-    }
+    return robotState == RobotState.RUNNING;
   }
 
   @Override
@@ -664,15 +670,19 @@ public class FtcRobotControllerActivity extends Activity
     programmingModeManager.setState(new FtcRobotControllerServiceState() {
       @NonNull
       @Override
-      public WebServer getWebServer() {
+      public WebServer getWebServer()
+      {
         return service.getWebServer();
       }
 
       @Override
-      public EventLoopManager getEventLoopManager() {
+      public EventLoopManager getEventLoopManager()
+      {
         return service.getRobot().eventLoopManager;
       }
     });
+    //TODO: do step 5
+    FtcDashboard.attachWebServer(service.getWebServer());
   }
 
   private void updateUIAndRequestRobotSetup() {
@@ -712,6 +722,7 @@ public class FtcRobotControllerActivity extends Activity
 
     passReceivedUsbAttachmentsToEventLoop();
     AndroidBoard.showErrorIfUnknownControlHub();
+    FtcDashboard.attachEventLoop(eventLoop);
   }
 
   protected OpModeRegister createOpModeRegister() {
@@ -776,11 +787,7 @@ public class FtcRobotControllerActivity extends Activity
       if (key.equals(context.getString(R.string.pref_app_theme))) {
         ThemedActivity.restartForAppThemeChange(getTag(), getString(R.string.appThemeChangeRestartNotifyRC));
       } else if (key.equals(context.getString(R.string.pref_wifi_automute))) {
-        if (preferencesHelper.readBoolean(context.getString(R.string.pref_wifi_automute), false)) {
-          initWifiMute(true);
-        } else {
-          initWifiMute(false);
-        }
+        initWifiMute(preferencesHelper.readBoolean(context.getString(R.string.pref_wifi_automute), false));
       }
     }
   }
