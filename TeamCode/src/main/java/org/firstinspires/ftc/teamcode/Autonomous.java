@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.teamcode.drive.Drive;
 
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous(group = "drive")
-public class Autonomous extends LinearOpMode
+public class Autonomous extends AlteredLinearOpMode
 {
     private Drive drive;
     private Auxiliary auxiliary;
@@ -115,6 +115,6 @@ public class Autonomous extends LinearOpMode
                         .splineTo(new Vector2d(10, -60), Math.toRadians(0))
                         .build());
 
-        lastPose = drive.getPose();
+        lastPose = drive.getPoseEstimate();
     }
 }

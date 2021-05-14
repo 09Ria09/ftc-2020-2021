@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.teamcode.drive.Drive;
 
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(group = "drive")
-public class TeleOp extends LinearOpMode
+public class TeleOp extends AlteredLinearOpMode
 {
     private Drive drive;
     private Auxiliary auxiliary;
