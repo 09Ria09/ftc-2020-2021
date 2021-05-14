@@ -23,7 +23,8 @@ public class TeleOp extends LinearOpMode
 
         drive = new Drive(hardwareMap);
         auxiliary = new Auxiliary(hardwareMap);
-        drive.setPoseEstimate(new Pose2d(-62.4, -49.6, Math.toRadians(0)));
+        //drive.setPoseEstimate(new Pose2d(-62.4, -49.6, Math.toRadians(0)));
+        drive.setPoseEstimate(lastPose);
         drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         waitForStart();

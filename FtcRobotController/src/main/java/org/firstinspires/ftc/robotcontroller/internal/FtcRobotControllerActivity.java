@@ -135,6 +135,7 @@ import androidx.annotation.StringRes;
 public class FtcRobotControllerActivity extends Activity
 {
   public static Pose2d lastPose;
+
   public static final String TAG = "RCActivity";
 
   public String getTag()
