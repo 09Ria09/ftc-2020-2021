@@ -31,6 +31,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
 package org.firstinspires.ftc.robotcontroller.internal;
 
+import com.acmerobotics.roadrunner.geometry.Pose2d;
+
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -132,6 +134,7 @@ import androidx.annotation.StringRes;
 @SuppressWarnings("WeakerAccess")
 public class FtcRobotControllerActivity extends Activity
 {
+  public static Pose2d lastPose;
   public static final String TAG = "RCActivity";
 
   public String getTag()
