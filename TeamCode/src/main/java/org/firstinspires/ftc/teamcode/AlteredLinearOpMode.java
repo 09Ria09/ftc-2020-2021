@@ -5,5 +5,5 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 public abstract class AlteredLinearOpMode extends LinearOpMode
 {
-    Pose2d lastPose;
+    public static Pose2d lastPose;
 }
