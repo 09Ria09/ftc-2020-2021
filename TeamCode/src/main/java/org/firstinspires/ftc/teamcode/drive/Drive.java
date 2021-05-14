@@ -34,7 +34,6 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.Global;
 import org.firstinspires.ftc.teamcode.util.DashboardUtil;
 import org.firstinspires.ftc.teamcode.util.LynxModuleUtil;
@@ -61,10 +60,10 @@ import static org.firstinspires.ftc.teamcode.drive.DriveConstants.kV;
 @Config
 public class Drive extends MecanumDrive
 {
-    public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(0, 0, 0);
-    public static PIDCoefficients HEADING_PID = new PIDCoefficients(0, 0, 0);
+    public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(8, 0, 0);
+    public static PIDCoefficients HEADING_PID = new PIDCoefficients(8, 0, 0);
 
-    public static double LATERAL_MULTIPLIER = 1;
+    public static double LATERAL_MULTIPLIER = 1.35;
 
     public static double VX_WEIGHT = 1;
     public static double VY_WEIGHT = 1;
@@ -88,7 +87,7 @@ public class Drive extends MecanumDrive
     private Mode mode;
     private MotionProfile turnProfile;
     private double turnStart;
-    private BNO055IMU imu;
+    private final BNO055IMU imu;
     private Pose2d lastPoseOnTurn;
 
     public Drive(HardwareMap hardwareMap)
@@ -113,6 +112,11 @@ public class Drive extends MecanumDrive
 
         poseHistory = new LinkedList<>();
 
+        imu = hardwareMap.get(BNO055IMU.class, "imu");
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
+        imu.initialize(parameters);
+
         LynxModuleUtil.ensureMinimumFirmwareVersion(hardwareMap);
 
         batteryVoltageSensor = hardwareMap.voltageSensor.iterator().next();
@@ -126,8 +130,8 @@ public class Drive extends MecanumDrive
         leftRear = hardwareMap.get(DcMotorEx.class, "backLeft");
         rightRear = hardwareMap.get(DcMotorEx.class, "backRight");
         rightFront = hardwareMap.get(DcMotorEx.class, "frontRight");
-        rightRear.setDirection(DcMotorSimple.Direction.REVERSE);
-        rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftRear.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
 
         motors = Arrays.asList(leftFront, leftRear, rightRear, rightFront);
 
@@ -423,7 +427,7 @@ public class Drive extends MecanumDrive
     @Override
     public double getRawExternalHeading()
     {
-        return 0;
+        return imu.getAngularOrientation().firstAngle;
     }
 
     @Override
@@ -465,9 +469,9 @@ public class Drive extends MecanumDrive
         followTrajectory(traj);
     }
 
-    public void debugEncoders(Telemetry telemetry)
+    public void debugEncoders()
     {
-        localizer.debugEncoders(telemetry);
+        localizer.debugEncoders();
     }
 
     public enum Mode
