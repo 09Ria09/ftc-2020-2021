@@ -459,7 +459,7 @@ public class Drive extends MecanumDrive
         if (isBusy())
             return;
         Pose2d pose = getPoseEstimate();
-        if (-20 > pose.getX() && pose.getX() > 10)
+        if (-20 > pose.getX() || pose.getX() > 10)
             return;
         double clampedY = Math.max(50, Math.min(-50, pose.getY()));
         Trajectory traj = trajectoryBuilder(pose)
