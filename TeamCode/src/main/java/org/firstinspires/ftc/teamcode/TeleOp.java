@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
@@ -13,14 +13,13 @@ public class TeleOp extends AlteredLinearOpMode
     private Drive drive;
     private Auxiliary auxiliary;
     private boolean x, y, a, b, startButton, backButton;
-    private double armX = 0, armY = 0;
+    private final double armX = 0;
+    private final double armY = 0;
+
 
     @Override
     public void runOpMode() throws InterruptedException
     {
-
-        FtcDashboard.start();
-
         drive = new Drive(hardwareMap);
         auxiliary = new Auxiliary(hardwareMap);
         //drive.setPoseEstimate(new Pose2d(-62.4, -49.6, Math.toRadians(0)));
@@ -31,29 +30,33 @@ public class TeleOp extends AlteredLinearOpMode
 
         while (!isStopRequested())
         {
+            Vector2d input = new Vector2d(
+                    -gamepad1.left_stick_y,
+                    -gamepad1.left_stick_x
+            ).rotated(-drive.getPoseEstimate().getHeading());
             drive.setWeightedDrivePower(
                     new Pose2d(
-                            -gamepad1.left_stick_y,
-                            -gamepad1.left_stick_x,
+                            input.getX(),
+                            input.getY(),
                             -(gamepad1.right_trigger - gamepad1.left_trigger)
                     )
             );
 
             drive.update();
+            auxiliary.updateAmmo();
+            auxiliary.updateTurret(drive.getPoseEstimate());
             updateKeys1();
 
             //auxiliary.debug();
             //drive.debugEncoders();
         }
-
-        FtcDashboard.stop();
     }
 
     private void updateKeys1()
     {
         if (gamepad1.x && !x)
         {
-            drive.arm(72, -5);
+            auxiliary.toggleIntakeDirection();
             x = true;
         } else if (!gamepad1.x)
             x = false;
@@ -67,24 +70,17 @@ public class TeleOp extends AlteredLinearOpMode
 
         if (gamepad1.a && !a)
         {
-            auxiliary.toggleGrabber();
+            auxiliary.toggleArm();
             a = true;
         } else if (!gamepad1.a)
             a = false;
 
         if (gamepad1.b && !b)
         {
-            drive.arm(armX, armY);
+            auxiliary.toggleGrabber();
             b = true;
         } else if (!gamepad1.b)
             b = false;
-
-        if (gamepad1.start && !startButton)
-        {
-            auxiliary.toggleArm();
-            startButton = true;
-        } else if (!gamepad1.start)
-            startButton = false;
 
         if (gamepad1.back && !backButton)
         {
@@ -93,6 +89,13 @@ public class TeleOp extends AlteredLinearOpMode
         } else if (!gamepad1.back)
             backButton = false;
 
+        /*
+        if (gamepad1.start && !startButton)
+        {
+            auxiliary.toggleArm();
+            startButton = true;
+        } else if (!gamepad1.start)
+            startButton = false;
 
         if (gamepad1.right_stick_x < -0.75)
         {
@@ -107,6 +110,6 @@ public class TeleOp extends AlteredLinearOpMode
             armX = 72;
             armY = -37;
         }
-
+        */
     }
 }
