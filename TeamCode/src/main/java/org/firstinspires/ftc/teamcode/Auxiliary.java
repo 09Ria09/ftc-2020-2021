@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -13,15 +14,18 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Auxiliary
 {
-    private final DcMotorEx launcher, grabber, intake;
+    final double yTurretOffset = 20, turretTicksPerRotation = 50000;
+    private final DcMotorEx launcher, grabber, intake, turret;
     private final Servo grabberServo, launcherServo, triggerServo, ammoServo;
-    private final DistanceSensor lowerDS, upperDS;
+    private final DistanceSensor lowerDS, upperDS, ammoSensor;
     private final FtcDashboard dashboard;
-    private int intakeSpeed, arm;
+    private int intakeSpeed, arm, ammo;
     private boolean grabberPos, triggerPos, shootBusy;
 
     public Auxiliary(HardwareMap hardwareMap)
     {
+        turret = hardwareMap.get(DcMotorEx.class, "turret");
+        turret.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         launcher = hardwareMap.get(DcMotorEx.class, "launcher");
         launcher.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         launcher.setDirection(DcMotorEx.Direction.REVERSE);
@@ -29,6 +33,7 @@ public class Auxiliary
         triggerServo = hardwareMap.get(Servo.class, "triggerServo");
         triggerServo.setPosition(0.25);
         ammoServo = hardwareMap.get(Servo.class, "ammoServo");
+        ammoSensor = hardwareMap.get(DistanceSensor.class, "ammoSensor");
         grabber = hardwareMap.get(DcMotorEx.class, "grabber");
         grabber.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         grabberServo = hardwareMap.get(Servo.class, "grabberServo");
@@ -40,24 +45,77 @@ public class Auxiliary
         dashboard = FtcDashboard.getInstance();
     }
 
+    public void updateAmmo()
+    {
+        if (intakeSpeed == 1 && ammoSensor.getDistance(DistanceUnit.CM) < 5)
+        {
+            ++ammo;
+            ammo = Math.max(ammo, 3);
+            if (ammo == 3)
+            {
+                toggleIntake();
+                shoot();
+            }
+            ammoServo.setPosition(getAmmoOffset(ammo));
+        }
+    }
+
+    public void updateTurret(Pose2d pose)
+    {
+        pose.plus(new Pose2d(0, yTurretOffset, 0));
+        double angle = Global.GetAngleOfLineBetweenTwoPoints(pose.getX(), pose.getX(), 72, -5);
+        turret.setTargetPosition((int) (turretTicksPerRotation / 2));
+    }
+
     public void shoot()
     {
         if (shootBusy)
             return;
-        shootBusy = true;
-        launcher.setPower(1);
-        ammoServo.setPosition(1);
-        Global.setTimeout(() ->
+        new Thread(() ->
         {
-            triggerServo.setPosition(0.7);
-        }, 2000);
-        Global.setTimeout(() ->
-        {
-            launcher.setVelocity(0);
-            triggerServo.setPosition(0.25);
-            ammoServo.setPosition(0.55);
+            shootBusy = true;
+            intakeSpeed = 0;
+            intake.setPower(0);
+            launcher.setPower(1);
+            while (ammo > 0)
+            {
+                ammoServo.setPosition(1 + getAmmoOffset(ammo));
+                triggerServo.setPosition(0.7);
+                try
+                {
+                    Thread.sleep(300);
+                } catch (InterruptedException e)
+                {
+                    e.printStackTrace();
+                }
+                --ammo;
+                triggerServo.setPosition(0.2);
+                try
+                {
+                    Thread.sleep(300);
+                } catch (InterruptedException e)
+                {
+                    e.printStackTrace();
+                }
+            }
             shootBusy = false;
-        }, 3500);
+            toggleIntake();
+        }).start();
+    }
+
+    private int getAmmoOffset(int level)
+    {
+        switch (level)
+        {
+            case 1:
+                return -2;
+            case 2:
+                return -1;
+            case 3:
+                return 0;
+            default:
+                return -3;
+        }
     }
 
     public void toggleGrabber()
@@ -72,10 +130,17 @@ public class Auxiliary
 
     public void toggleIntake()
     {
-        if (intakeSpeed == 0)
+        if (intakeSpeed == 0 && ammo < 3 && !shootBusy)
             intakeSpeed = 1;
         else intakeSpeed = 0;
         intake.setPower(intakeSpeed);
+    }
+
+    public void toggleIntakeDirection()
+    {
+        if (intake.getDirection() == DcMotorEx.Direction.FORWARD)
+            intake.setDirection(DcMotorSimple.Direction.REVERSE);
+        else intake.setDirection(DcMotorSimple.Direction.FORWARD);
     }
 
     public void toggleArm()
@@ -90,9 +155,9 @@ public class Auxiliary
     public char detectCase()
     {
         int cutOff = 20;
-        if (lowerDS.getDistance(DistanceUnit.CM) < 20 && upperDS.getDistance(DistanceUnit.CM) < 20)
+        if (lowerDS.getDistance(DistanceUnit.CM) < cutOff && upperDS.getDistance(DistanceUnit.CM) < cutOff)
             return 'C';
-        else if (lowerDS.getDistance(DistanceUnit.CM) < 20 && upperDS.getDistance(DistanceUnit.CM) > 20)
+        else if (lowerDS.getDistance(DistanceUnit.CM) < cutOff && upperDS.getDistance(DistanceUnit.CM) > cutOff)
             return 'B';
         else return 'A';
     }

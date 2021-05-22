@@ -15,7 +15,7 @@ public class Autonomous extends LinearOpMode
     private Auxiliary auxiliary;
     private final Global global = new Global();
     private final boolean releasedWobble = false;
-    private char caseABC;
+    private char caseABC = 'A';
 
     @Override
     public void runOpMode() throws InterruptedException
@@ -32,8 +32,14 @@ public class Autonomous extends LinearOpMode
         Trajectory traj = drive.trajectoryBuilder(new Pose2d(-62, -50, 0))
                 .splineTo(new Vector2d(-32, -55), Math.toRadians(50))
                 .build();
-        drive.followTrajectory(traj);
-        caseABC = auxiliary.detectCase();
+        drive.followTrajectoryAsync(traj);
+        while (drive.isBusy())
+        {
+            drive.update();
+            char tmp = auxiliary.detectCase();
+            if (auxiliary.detectCase() != 'A')
+                caseABC = tmp;
+        }
         double x = 0, y = 0, h = 0;
         switch (caseABC)
         {
@@ -58,13 +64,25 @@ public class Autonomous extends LinearOpMode
                 .build();
         drive.followTrajectory(traj);
 
-        //auxiliary.toggleGrabber();
-
-        Thread.sleep(1000);
-
-        //auxiliary.toggleGrabber();
-
         drive.followTrajectory(drive.trajectoryBuilder(drive.getPoseEstimate())
+                .splineTo(new Vector2d(x, y), h)
+                .addDisplacementMarker(() ->
+                {
+                    new Thread(() ->
+                    {
+                        auxiliary.toggleArm();
+                        auxiliary.toggleGrabber();
+                        try
+                        {
+                            Thread.sleep(400);
+                        } catch (InterruptedException e)
+                        {
+                            e.printStackTrace();
+                        }
+                        auxiliary.toggleArm();
+                        auxiliary.toggleGrabber();
+                    }).start();
+                })
                 .splineTo(new Vector2d(-2, -35), Math.toRadians(20))
                 .build());
 
