@@ -14,7 +14,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Auxiliary
 {
-    final double yTurretOffset = 20, turretTicksPerRotation = 50000;
+    final double yTurretOffset = 20, turretTicksPerRotation = 50000,
+            maxTurretAngle = 30, minTurretAngle = 30;
+
     private final DcMotorEx launcher, grabber, intake, turret;
     private final Servo grabberServo, launcherServo, triggerServo, ammoServo;
     private final DistanceSensor lowerDS, upperDS, ammoSensor;
@@ -64,7 +66,10 @@ public class Auxiliary
     {
         pose.plus(new Pose2d(0, yTurretOffset, 0));
         double angle = Global.GetAngleOfLineBetweenTwoPoints(pose.getX(), pose.getX(), 72, -5);
-        turret.setTargetPosition((int) (turretTicksPerRotation / 2));
+        angle = Math.max(angle, maxTurretAngle);
+        angle = Math.min(angle, minTurretAngle);
+
+        turret.setTargetPosition((int) ((turretTicksPerRotation / 2) * angle) );
     }
 
     public void shoot()
