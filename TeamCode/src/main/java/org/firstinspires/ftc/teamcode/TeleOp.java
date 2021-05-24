@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.teamcode.drive.Drive;
 
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(group = "drive")
-public class TeleOp extends LinearOpMode
+public class TeleOp extends AlteredLinearOpMode
 {
     private Drive drive;
     private Auxiliary auxiliary;
@@ -22,7 +22,8 @@ public class TeleOp extends LinearOpMode
     {
         drive = new Drive(hardwareMap);
         auxiliary = new Auxiliary(hardwareMap);
-        drive.setPoseEstimate(new Pose2d(-62.4, -49.6, Math.toRadians(0)));
+        //drive.setPoseEstimate(new Pose2d(-62.4, -49.6, Math.toRadians(0)));
+        drive.setPoseEstimate(lastPose);
         drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         waitForStart();
