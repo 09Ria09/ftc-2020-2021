@@ -11,7 +11,6 @@ import com.acmerobotics.roadrunner.drive.MecanumDrive;
 import com.acmerobotics.roadrunner.followers.HolonomicPIDVAFollower;
 import com.acmerobotics.roadrunner.followers.TrajectoryFollower;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
-import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.profile.MotionProfile;
 import com.acmerobotics.roadrunner.profile.MotionProfileGenerator;
 import com.acmerobotics.roadrunner.profile.MotionState;
@@ -34,7 +33,10 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.teamcode.Global;
+import org.firstinspires.ftc.teamcode.util.AxesSigns;
+import org.firstinspires.ftc.teamcode.util.BNO055IMUUtil;
 import org.firstinspires.ftc.teamcode.util.DashboardUtil;
 import org.firstinspires.ftc.teamcode.util.LynxModuleUtil;
 
@@ -116,6 +118,7 @@ public class Drive extends MecanumDrive
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
         imu.initialize(parameters);
+        BNO055IMUUtil.remapAxes(imu, AxesOrder.XYZ, AxesSigns.NPN);
 
         LynxModuleUtil.ensureMinimumFirmwareVersion(hardwareMap);
 
@@ -257,10 +260,12 @@ public class Drive extends MecanumDrive
         packet.put("x", currentPose.getX());
         packet.put("y", currentPose.getY());
         packet.put("heading (deg)", Math.toDegrees(currentPose.getHeading()));
+        packet.put("heading 2(deg)", Math.toDegrees((getRawExternalHeading() + 2 * Math.PI) % (Math.PI)));
 
         packet.put("xError", lastError.getX());
         packet.put("yError", lastError.getY());
         packet.put("headingError (deg)", Math.toDegrees(lastError.getHeading()));
+        packet.put("hmm", Global.GetAngleOfLineBetweenTwoPoints(currentPose.getX(), currentPose.getY(), 72, -37));
 
         switch (mode)
         {
@@ -326,7 +331,7 @@ public class Drive extends MecanumDrive
         fieldOverlay.setStroke("#3F51B5");
         DashboardUtil.drawRobot(fieldOverlay, currentPose);
 
-        dashboard.sendTelemetryPacket(packet);
+        //dashboard.sendTelemetryPacket(packet);
     }
 
     public void waitForIdle()
@@ -459,6 +464,7 @@ public class Drive extends MecanumDrive
         if (isBusy())
             return;
         Pose2d pose = getPoseEstimate();
+        /*
         if (-20 > pose.getX() || pose.getX() > 10)
             return;
         double clampedY = Math.max(50, Math.min(-50, pose.getY()));
@@ -467,6 +473,8 @@ public class Drive extends MecanumDrive
                         Global.GetAngleOfLineBetweenTwoPoints(pose.getX(), pose.getY(), x2, y2))
                 .build();
         followTrajectory(traj);
+         */
+        turn(Global.GetAngleOfLineBetweenTwoPoints(pose.getX(), pose.getY(), x2, y2));
     }
 
     public void debugEncoders()

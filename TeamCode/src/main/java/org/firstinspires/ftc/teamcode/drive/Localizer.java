@@ -22,8 +22,8 @@ public class Localizer extends ThreeTrackingWheelLocalizer
     public static double WHEEL_RADIUS = 0.98425; // in
     public static double GEAR_RATIO = 1; // output (wheel) speed / input (encoder) speed
 
-    public static double LATERAL_DISTANCE = 15;//16.4526;//9.26; //14.822835; // in; distance between the left and right wheels
-    public static double FORWARD_OFFSET = -4;//-4.7; // in; offset of the lateral wheel
+    public static double LATERAL_DISTANCE = 15.4330709;//15.0394;//15.2756;//15.74;//10.3299;//15;//16.4526;//9.26; //14.822835; // in; distance between the left and right wheels
+    public static double FORWARD_OFFSET = -8;//-7.5;//-8.1;//-4;//-4.7; // in; offset of the lateral wheel
 
     private final Encoder leftEncoder, rightEncoder, centerEncoder;
 
@@ -41,7 +41,7 @@ public class Localizer extends ThreeTrackingWheelLocalizer
         rightEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "frontRight"));
         rightEncoder.setDirection(Encoder.Direction.REVERSE);
         centerEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "backRight"));
-        centerEncoder.setDirection(Encoder.Direction.REVERSE);
+        // centerEncoder.setDirection(Encoder.Direction.REVERSE);
         dashboard = FtcDashboard.getInstance();
     }
 

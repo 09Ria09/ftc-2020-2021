@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.teamcode.drive.Drive;
@@ -15,124 +14,151 @@ public class Autonomous extends AlteredLinearOpMode
     private Auxiliary auxiliary;
     private final Global global = new Global();
     private final boolean releasedWobble = false;
-    private char caseABC = 'A';
+    private final char caseABC = 'A';
+    private final double shootAngle = 0;
 
     @Override
     public void runOpMode() throws InterruptedException
     {
         drive = new Drive(hardwareMap);
-        auxiliary = new Auxiliary(hardwareMap);
+        auxiliary = new Auxiliary(hardwareMap, true);
         drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        drive.setPoseEstimate(new Pose2d(-62, -50, 0));
+        drive.setPoseEstimate(new Pose2d(-62, -30.20, 0));
+        auxiliary.preloadAmmo(3);
 
         waitForStart();
         if (isStopRequested())
             return;
-
-        Trajectory traj = drive.trajectoryBuilder(new Pose2d(-62, -50, 0))
-                .splineTo(new Vector2d(-32, -55), Math.toRadians(50))
+        Trajectory trajCase = drive.trajectoryBuilder(drive.getPoseEstimate())
+                .splineTo(new Vector2d(-45, -30.20), 0)
                 .build();
-        drive.followTrajectoryAsync(traj);
-        while (drive.isBusy())
-        {
-            drive.update();
-            char tmp = auxiliary.detectCase();
-            if (auxiliary.detectCase() != 'A')
-                caseABC = tmp;
-        }
-        double x = 0, y = 0, h = 0;
+        drive.followTrajectory(trajCase);
+        //caseABC = auxiliary.detectCase();
+
+        double x = 0, y = 0, t = 0, h = 0;
         switch (caseABC)
         {
             case 'A':
-                x = 32;
-                y = -60;
-                h = Math.toRadians(-90);
+                x = 8;
+                y = -45;
+                t = Math.toRadians(-180);
+                h = Math.toRadians(-179.99);
                 break;
             case 'B':
-                x = 36;
-                y = -55;
-                h = Math.toRadians(180);
+                x = 40;
+                y = -45;
+                t = Math.toRadians(0);
+                h = Math.toRadians(0);
                 break;
             case 'C':
                 x = 40;
                 y = -56;
-                h = Math.toRadians(90);
+                t = Math.toRadians(0);
+                h = Math.toRadians(-90);
                 break;
         }
-        traj = drive.trajectoryBuilder(drive.getPoseEstimate())
-                .splineTo(new Vector2d(x, y), h)
-                .build();
-        drive.followTrajectory(traj);
-
-        drive.followTrajectory(drive.trajectoryBuilder(drive.getPoseEstimate())
-                .splineTo(new Vector2d(x, y), h)
+        Trajectory trajShoot = drive.trajectoryBuilder(trajCase.end())
                 .addDisplacementMarker(() ->
                 {
-                    new Thread(() ->
-                    {
-                        auxiliary.toggleArm();
-                        auxiliary.toggleGrabber();
-                        try
-                        {
-                            Thread.sleep(400);
-                        } catch (InterruptedException e)
-                        {
-                            e.printStackTrace();
-                        }
-                        auxiliary.toggleArm();
-                        auxiliary.toggleGrabber();
-                    }).start();
+                    auxiliary.setLauncher(1);
+                    auxiliary.preloadAmmo(3);
                 })
-                .splineTo(new Vector2d(-2, -35), Math.toRadians(20))
-                .build());
+                .splineTo(new Vector2d(-23, -20), Math.toRadians(0))
+                .splineTo(new Vector2d(-3, -18), Math.toRadians(0))
+                .build();
 
-        /*
-        drive.arm(72, -37);
-        auxiliary.shoot();
-        drive.arm(72, -38);
-        auxiliary.shoot();
-        drive.arm(72, -39);
-        auxiliary.shoot();
+        Trajectory trajWobble = drive.trajectoryBuilder(trajShoot.end())
+                .splineToSplineHeading(new Pose2d(x, y, h), t)
+                .build();
 
-         */
+        Trajectory trajReload = drive.trajectoryBuilder(trajWobble.end().plus(new Pose2d(0, 0, Math.toRadians(shootAngle))), true)
+                .splineTo(new Vector2d(-50, -36), Math.toRadians(180))
+                .build();
 
-        if (caseABC != 'A')
-        {
-            drive.turn(Math.toRadians(180));
-            drive.followTrajectory(
-                    drive.trajectoryBuilder(
-                            drive.getPoseEstimate())
-                            .splineTo(new Vector2d(-30, -36), Math.toRadians(180))
-                            .splineTo(new Vector2d(-2, -35), Math.toRadians(20))
-                            .build());
-        }
+        Trajectory trajStrafeLeft = drive.trajectoryBuilder(trajWobble.end()).strafeLeft(-5)
+                .build();
 
-        if (caseABC == 'C')
-        {
-            /*
-            drive.arm(72, -37);
-            auxiliary.shoot();
-            drive.arm(72, -38);
-            auxiliary.shoot();
-            drive.arm(72, -39);
-            auxiliary.shoot();
+        Trajectory trajGoTo2ndWobble = drive.trajectoryBuilder(trajStrafeLeft.end())
+                .splineToSplineHeading(new Pose2d(-30, -51, Math.toRadians(90)), Math.toRadians(160))
+                .splineToConstantHeading(new Vector2d(-40, -48), Math.toRadians(0))
+                .build();
 
-             */
-        } else if (caseABC == 'B')
-        {
-            /*
-            drive.arm(72, -37);
-            auxiliary.shoot();
+        Trajectory trajShoot2 = drive.trajectoryBuilder(trajGoTo2ndWobble.end()
+                .plus(new Pose2d(0, 0, Global.GetAngleOfLineBetweenTwoPoints(trajGoTo2ndWobble.end().getX(), trajGoTo2ndWobble.end().getY(), 72, 0))))
+                .addDisplacementMarker(() ->
+                {
+                    auxiliary.setLauncher(1);
+                    auxiliary.preloadAmmo(2);
+                })
+                .splineTo(new Vector2d(-10, -53), Math.toRadians(0))
+                .build();
 
-             */
-        }
+        Trajectory trajWobble2 = drive.trajectoryBuilder(trajShoot2.end())
+                .splineTo(new Vector2d(-10, -30), Math.toRadians(90))
+                .splineToSplineHeading(new Pose2d(x, y, h), 0)
+                .build();
 
-        drive.followTrajectory(
-                drive.trajectoryBuilder(
-                        drive.getPoseEstimate())
-                        .splineTo(new Vector2d(10, -60), Math.toRadians(0))
-                        .build());
+        Trajectory trajShoot3 = drive.trajectoryBuilder(trajStrafeLeft.end())
+                .addDisplacementMarker(() ->
+                {
+                    auxiliary.setLauncher(1);
+                    auxiliary.preloadAmmo(1);
+                })
+                .splineTo(new Vector2d(-3, -18), Math.toRadians(0))
+                .build();
 
+        Trajectory trajPark = drive.trajectoryBuilder(trajShoot3.end())
+                .splineTo(new Vector2d(10, -18), Math.toRadians(0))
+                .build();
+
+        drive.followTrajectory(trajShoot);
+        drive.arm(72, -2);
+        shoot();
+        drive.followTrajectory(trajWobble);
+        leaveWobble(trajStrafeLeft);
+        drive.followTrajectory(trajGoTo2ndWobble);
+        drive.followTrajectory(trajShoot2);
+        drive.arm(72, 0);
+        shoot();
+        drive.followTrajectory(trajWobble2);
+        leaveWobble(trajStrafeLeft);
+        drive.followTrajectory(trajShoot3);
+        shoot();
+        drive.followTrajectory(trajPark);
         lastPose = drive.getPoseEstimate();
+    }
+
+    private void leaveWobble(Trajectory traj)
+    {
+        auxiliary.toggleArm();
+        try
+        {
+            Thread.sleep(1500);
+        } catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+        auxiliary.toggleGrabber();
+
+        drive.followTrajectory(traj);
+
+        auxiliary.toggleArm();
+        auxiliary.toggleGrabber();
+    }
+
+    private void shoot()
+    {
+        auxiliary.shoot(1);
+        while (auxiliary.shootBusy)
+        {
+            try
+            {
+                Thread.sleep(25);
+            } catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+        }
+        auxiliary.setLauncher(0);
     }
 }
