@@ -8,14 +8,14 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.teamcode.drive.Drive;
 
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous(group = "drive")
-public class Autonomous extends AlteredLinearOpMode
+public class Autonomous3 extends AlteredLinearOpMode
 {
-    private Drive drive;
-    private Auxiliary auxiliary;
     private final Global global = new Global();
     private final boolean releasedWobble = false;
-    private final char caseABC = 'A';
     private final double shootAngle = 0;
+    private Drive drive;
+    private Auxiliary auxiliary;
+    private char caseABC = 'A';
 
     @Override
     public void runOpMode() throws InterruptedException
@@ -31,29 +31,39 @@ public class Autonomous extends AlteredLinearOpMode
         if (isStopRequested())
             return;
         Trajectory trajCase = drive.trajectoryBuilder(drive.getPoseEstimate())
-                .splineTo(new Vector2d(-45, -30.20), 0)
+                .splineTo(new Vector2d(-35.5, -28.50), 0)
                 .build();
-        drive.followTrajectory(trajCase);
-        //caseABC = auxiliary.detectCase();
+        drive.followTrajectoryAsync(trajCase);
+        waitForDrive();
+        if (isStopRequested())
+            return;
+        caseABC = auxiliary.detectCase();
 
-        double x = 0, y = 0, t = 0, h = 0;
+        double x = 0, y = 0, t = 0, h = 0, ox = 0, oy = 0;
         switch (caseABC)
         {
             case 'A':
-                x = 8;
+                x = 13;
                 y = -45;
+                oy = -7;
+                ox = 0;
                 t = Math.toRadians(-180);
                 h = Math.toRadians(-179.99);
                 break;
             case 'B':
                 x = 40;
                 y = -45;
+                oy = -7;
+                ox = 0;
                 t = Math.toRadians(0);
                 h = Math.toRadians(0);
                 break;
             case 'C':
                 x = 40;
                 y = -56;
+                oy = 0;
+                oy = -7;
+
                 t = Math.toRadians(0);
                 h = Math.toRadians(-90);
                 break;
@@ -63,25 +73,27 @@ public class Autonomous extends AlteredLinearOpMode
                 {
                     auxiliary.setLauncher(1);
                     //auxiliary.preloadAmmo(3);
-                    auxiliary.prepareAmmo();
+                    //auxiliary.prepareAmmo();
                 })
-                .splineTo(new Vector2d(-23, -20), Math.toRadians(0))
+                .splineToConstantHeading(new Vector2d(-35.5, -20), Math.toRadians(90))
+                .splineTo(new Vector2d(-23, -18), Math.toRadians(0))
                 .splineTo(new Vector2d(-3, -18), Math.toRadians(0))
                 .build();
 
         Trajectory trajWobble = drive.trajectoryBuilder(trajShoot.end())
-                .splineToSplineHeading(new Pose2d(x, y, h), t)
+                .splineToSplineHeading(new Pose2d(x + ox, y + oy, h), t)
                 .build();
 
         Trajectory trajStrafeLeft = drive.trajectoryBuilder(trajWobble.end()).strafeLeft(-5)
                 .build();
 
         Trajectory trajGoTo2ndWobble = drive.trajectoryBuilder(trajStrafeLeft.end())
-                .splineToSplineHeading(new Pose2d(-30, -39, Math.toRadians(90)), Math.toRadians(160))
+                .splineToSplineHeading(new Pose2d(-32, -45, Math.toRadians(90)), Math.toRadians(160))
                 //.splineToConstantHeading(new Vector2d(-40, -48), Math.toRadians(0))
                 .build();
 
-        Trajectory trajStrafeRight = drive.trajectoryBuilder(trajGoTo2ndWobble.end()).strafeLeft(5)
+        Trajectory trajStrafeRight = drive.trajectoryBuilder(trajGoTo2ndWobble.end())
+                .strafeLeft(5)
                 .build();
 
         Trajectory trajShoot2 = drive.trajectoryBuilder(trajStrafeRight.end()
@@ -90,22 +102,24 @@ public class Autonomous extends AlteredLinearOpMode
                 {
                     auxiliary.setLauncher(1);
                     //auxiliary.preloadAmmo(2);
-                    auxiliary.prepareAmmo();
+                    //auxiliary.prepareAmmo();
                 })
-                .splineTo(new Vector2d(-10, -53), Math.toRadians(0))
+                .splineTo(new Vector2d(-10, -46), Math.toRadians(90))
                 .build();
 
         Trajectory trajWobble2 = drive.trajectoryBuilder(trajShoot2.end())
-                .splineTo(new Vector2d(-10, -30), Math.toRadians(90))
                 .splineToSplineHeading(new Pose2d(x, y, h), 0)
                 .build();
 
-        Trajectory trajShoot3 = drive.trajectoryBuilder(trajStrafeLeft.end())
+        Trajectory trajStrafeLeft2 = drive.trajectoryBuilder(trajWobble2.end()).strafeLeft(-5)
+                .build();
+
+        Trajectory trajShoot3 = drive.trajectoryBuilder(trajStrafeLeft2.end())
                 .addDisplacementMarker(() ->
                 {
                     auxiliary.setLauncher(1);
                     //auxiliary.preloadAmmo(1);
-                    auxiliary.prepareAmmo();
+                    //auxiliary.prepareAmmo();
                 })
                 .splineTo(new Vector2d(-3, -18), Math.toRadians(0))
                 .build();
@@ -114,22 +128,52 @@ public class Autonomous extends AlteredLinearOpMode
                 .splineTo(new Vector2d(10, -18), Math.toRadians(0))
                 .build();
 
-        drive.followTrajectory(trajShoot);
+        drive.followTrajectoryAsync(trajShoot);
+        waitForDrive();
+        if (isStopRequested())
+            return;
         drive.arm(72, -2);
+        waitForDrive();
+        if (isStopRequested())
+            return;
         shoot();
-        drive.followTrajectory(trajWobble);
+        drive.followTrajectoryAsync(trajWobble);
+        waitForDrive();
+        if (isStopRequested())
+            return;
         leaveWobble(trajStrafeLeft);
-        drive.followTrajectory(trajGoTo2ndWobble);
+        drive.followTrajectoryAsync(trajGoTo2ndWobble);
+        waitForDrive();
+        if (isStopRequested())
+            return;
         pickupWobble(trajStrafeRight);
-        drive.followTrajectory(trajShoot2);
+        drive.followTrajectoryAsync(trajShoot2);
+        waitForDrive();
+        if (isStopRequested())
+            return;
         drive.arm(72, -5.54);
+        waitForDrive();
+        if (isStopRequested())
+            return;
         shoot();
-        drive.followTrajectory(trajWobble2);
-        leaveWobble(trajStrafeLeft);
-        drive.followTrajectory(trajShoot3);
+        drive.followTrajectoryAsync(trajWobble2);
+        waitForDrive();
+        if (isStopRequested())
+            return;
+        leaveWobble(trajStrafeLeft2);
+        drive.followTrajectoryAsync(trajShoot3);
+        waitForDrive();
+        if (isStopRequested())
+            return;
         drive.arm(72, -9.08);
+        waitForDrive();
+        if (isStopRequested())
+            return;
         shoot();
-        drive.followTrajectory(trajPark);
+        drive.followTrajectoryAsync(trajPark);
+        waitForDrive();
+        if (isStopRequested())
+            return;
         lastPose = drive.getPoseEstimate();
     }
 
@@ -152,7 +196,10 @@ public class Autonomous extends AlteredLinearOpMode
             e.printStackTrace();
         }
 
-        drive.followTrajectory(traj);
+        drive.followTrajectoryAsync(traj);
+        waitForDrive();
+        if (isStopRequested())
+            return;
 
         auxiliary.toggleArm();
         auxiliary.toggleGrabber();
@@ -170,14 +217,10 @@ public class Autonomous extends AlteredLinearOpMode
         {
             e.printStackTrace();
         }
-        drive.followTrajectory(traj);
-        try
-        {
-            Thread.sleep(1000);
-        } catch (InterruptedException e)
-        {
-            e.printStackTrace();
-        }
+        drive.followTrajectoryAsync(traj);
+        waitForDrive();
+        if (isStopRequested())
+            return;
         auxiliary.toggleGrabber();
         try
         {
@@ -192,7 +235,7 @@ public class Autonomous extends AlteredLinearOpMode
     private void shoot()
     {
         auxiliary.shoot(1);
-        while (auxiliary.shootBusy)
+        while (auxiliary.shootBusy && opModeIsActive())
         {
             try
             {
@@ -203,5 +246,14 @@ public class Autonomous extends AlteredLinearOpMode
             }
         }
         auxiliary.setLauncher(0);
+    }
+
+    private void waitForDrive()
+    {
+        drive.update();
+        while (drive.isBusy() && opModeIsActive())
+        {
+            drive.update();
+        }
     }
 }

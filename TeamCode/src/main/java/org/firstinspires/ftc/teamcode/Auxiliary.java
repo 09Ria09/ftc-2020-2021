@@ -3,9 +3,11 @@ package org.firstinspires.ftc.teamcode;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -18,10 +20,12 @@ public class Auxiliary
             maxTurretAngle = 30, minTurretAngle = 30;
 
     private final DcMotorEx launcher, grabber, intake, turret;
-    private final Servo grabberServo0, grabberServo1, triggerServo, ammoServo, intakeServo;
-    private final DistanceSensor lowerDS, upperDS;
+    private final DigitalChannel launcherSensor;
+    private final Servo grabberServo0, grabberServo1, triggerServo, intakeServo;
+    private final CRServo ammoServo;
+    private final DistanceSensor lowerDS, upperDS, crSensor;
     private final FtcDashboard dashboard;
-    private final double ammoHome = 0.95;
+    private final double ammoHome = 0.96;
     public boolean shootBusy, auto;
     private int intakeSpeed, arm = 0;
     private boolean grabberPos, triggerPos;
@@ -41,7 +45,7 @@ public class Auxiliary
 
         triggerServo = hardwareMap.get(Servo.class, "triggerServo");
 
-        ammoServo = hardwareMap.get(Servo.class, "ammoServo");
+        ammoServo = hardwareMap.get(CRServo.class, "ammoServo");
 
         grabber = hardwareMap.get(DcMotorEx.class, "grabber");
         if (auto)
@@ -63,17 +67,23 @@ public class Auxiliary
 
         lowerDS = hardwareMap.get(DistanceSensor.class, "lowerDS");
         upperDS = hardwareMap.get(DistanceSensor.class, "upperDS");
+
+        launcherSensor = hardwareMap.get(DigitalChannel.class, "launcherSensor");
+        crSensor = hardwareMap.get(DistanceSensor.class, "crSensor");
+        launcherSensor.setMode(DigitalChannel.Mode.INPUT);
+
         dashboard = FtcDashboard.getInstance();
 
         launcher.setPower(0);
         triggerServo.setPosition(0.56);
-        ammoServo.setPosition(ammoHome);
+        //ammoServo.setPosition(ammoHome);
+        //ammoHome();
 
         grabber.setTargetPosition(arm);
         grabber.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         grabber.setPower(1);
-        grabberServo0.setPosition(0.05);
-        grabberServo1.setPosition(0.05);
+        grabberServo0.setPosition(0);
+        grabberServo1.setPosition(0);
         grabberPos = true;
         intakeServo.setPosition(1);
     }
@@ -105,10 +115,10 @@ public class Auxiliary
         turret.setTargetPosition((int) ((turretTicksPerRotation / 2) * angle));
     }
 
-    public void preloadAmmo(int n)
+    /*public void preloadAmmo(int n)
     {
         ammoServo.setPosition(getAmmoOffset(n));
-    }
+    }*/
 
     public void setLauncher(double n)
     {
@@ -142,21 +152,13 @@ public class Auxiliary
             }
             for (int i = n; i > 0; --i)
             {
-                ammoServo.setPosition(getAmmoOffset(i));
-                if (i == n && !auto)
+                //ammoServo.setPosition(getAmmoOffset(i));
+                prepareAmmo();
+                if (i != n)
                 {
                     try
                     {
-                        Thread.sleep(4500);
-                    } catch (InterruptedException e)
-                    {
-                        e.printStackTrace();
-                    }
-                } else if (!auto)
-                {
-                    try
-                    {
-                        Thread.sleep(2000);
+                        Thread.sleep(1000);
                     } catch (InterruptedException e)
                     {
                         e.printStackTrace();
@@ -171,26 +173,28 @@ public class Auxiliary
                     e.printStackTrace();
                 }
                 triggerServo.setPosition(0.56);
+                try
+                {
+                    Thread.sleep(300);
+                } catch (InterruptedException e)
+                {
+                    e.printStackTrace();
+                }
             }
 
             if (!auto)
             {
-                ammoServo.setPosition(ammoHome);
+                //ammoServo.setPosition(ammoHome);
                 try
                 {
-                    Thread.sleep(1000);
+                    Thread.sleep(300);
                 } catch (InterruptedException e)
                 {
                     e.printStackTrace();
                 }
                 launcher.setPower(0);
-                try
-                {
-                    Thread.sleep(3500);
-                } catch (InterruptedException e)
-                {
-                    e.printStackTrace();
-                }
+
+                ammoHome();
                 if (isr)
                     toggleIntake();
             }
@@ -203,14 +207,46 @@ public class Auxiliary
         switch (level)
         {
             case 1:
-                return 0.66;
+                return 0.615;
             case 2:
-                return 0.69;
+                return 0.65;
             case 3:
-                return 0.73;
+                return 0.68;
             default:
-                return 1;
+                return ammoHome;
         }
+    }
+
+    public void prepareAmmo()
+    {
+        ammoServo.setPower(-1);
+        while (crSensor.getDistance(DistanceUnit.CM) > 1.1)
+        {
+            try
+            {
+                Thread.sleep(10);
+            } catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+        }
+        ammoServo.setPower(0);
+    }
+
+    public void ammoHome()
+    {
+        ammoServo.setPower(1);
+        while (launcherSensor.getState())
+        {
+            try
+            {
+                Thread.sleep(10);
+            } catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+        }
+        ammoServo.setPower(0);
     }
 
     public void toggleGrabber()
@@ -218,8 +254,8 @@ public class Auxiliary
         grabberPos = !grabberPos;
         if (grabberPos)
         {
-            grabberServo0.setPosition(0.05);
-            grabberServo1.setPosition(0.05);
+            grabberServo0.setPosition(0);
+            grabberServo1.setPosition(0);
         } else
         {
             grabberServo0.setPosition(1);
@@ -272,7 +308,7 @@ public class Auxiliary
 
     public char detectCase()
     {
-        int cutOff = 20;
+        int cutOff = 9;
         if (lowerDS.getDistance(DistanceUnit.CM) < cutOff && upperDS.getDistance(DistanceUnit.CM) < cutOff)
             return 'C';
         else if (lowerDS.getDistance(DistanceUnit.CM) < cutOff && upperDS.getDistance(DistanceUnit.CM) > cutOff)
@@ -285,8 +321,10 @@ public class Auxiliary
         TelemetryPacket packet = new TelemetryPacket();
         packet.put("turret", turret.getCurrentPosition());
         packet.put("grabber", grabber.getCurrentPosition());
-        packet.put("lowerDS", lowerDS.getDistance(DistanceUnit.INCH));
-        packet.put("upperDS", upperDS.getDistance(DistanceUnit.INCH));
+        packet.put("lowerDS", lowerDS.getDistance(DistanceUnit.CM));
+        packet.put("upperDS", upperDS.getDistance(DistanceUnit.CM));
+        packet.put("sensor1", launcherSensor.getState());
+        packet.put("cr", crSensor.getDistance(DistanceUnit.CM));
         dashboard.sendTelemetryPacket(packet);
     }
 }
