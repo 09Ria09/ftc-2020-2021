@@ -60,25 +60,25 @@ public class TeleOp extends AlteredLinearOpMode
         } else if (!gamepad1.x)
             x = false;
 
-        if (gamepad1.y && !y)
+        if (gamepad2.y && !y)
         {
             auxiliary.shoot(3);
             y = true;
-        } else if (!gamepad1.y)
+        } else if (!gamepad2.y)
             y = false;
 
-        if (gamepad1.a && !a)
+        if (gamepad2.a && !a)
         {
             auxiliary.toggleArm();
             a = true;
-        } else if (!gamepad1.a)
+        } else if (!gamepad2.a)
             a = false;
 
-        if (gamepad1.b && !b)
+        if (gamepad2.b && !b)
         {
             auxiliary.toggleGrabber();
             b = true;
-        } else if (!gamepad1.b)
+        } else if (!gamepad2.b)
             b = false;
 
         if (gamepad1.start && !startButton)
@@ -109,21 +109,21 @@ public class TeleOp extends AlteredLinearOpMode
         } else if (!gamepad1.right_bumper)
             rightBumper = false;
 
-        if (gamepad1.right_stick_x < -0.75 && Math.abs(gamepad1.right_stick_y) < 0.5 && gamepad1.right_stick_button && !rightStickButton)
+        if (gamepad2.right_stick_x < -0.75 && Math.abs(gamepad2.right_stick_y) < 0.5 && gamepad2.right_stick_button && !rightStickButton)
         {
             auxiliary.shoot(1);
             rightStickButton = true;
-        } else if (gamepad1.right_stick_x > 0.75 && Math.abs(gamepad1.right_stick_y) < 0.5 && gamepad1.right_stick_button && !rightStickButton)
+        } else if (gamepad2.right_stick_x > 0.75 && Math.abs(gamepad2.right_stick_y) < 0.5 && gamepad2.right_stick_button && !rightStickButton)
         {
 
             auxiliary.shoot(3);
             rightStickButton = true;
-        } else if (Math.abs(gamepad1.right_stick_x) < 0.5 && gamepad1.right_stick_y < -0.75 && gamepad1.right_stick_button && !rightStickButton)
+        } else if (Math.abs(gamepad2.right_stick_x) < 0.5 && gamepad2.right_stick_y < -0.75 && gamepad2.right_stick_button && !rightStickButton)
         {
 
             auxiliary.shoot(2);
             rightStickButton = true;
-        } else if (!gamepad1.right_stick_button)
+        } else if (!gamepad2.right_stick_button)
             rightStickButton = false;
 
         /*
