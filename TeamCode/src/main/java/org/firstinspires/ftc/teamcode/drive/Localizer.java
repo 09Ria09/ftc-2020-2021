@@ -78,5 +78,6 @@ public class Localizer extends ThreeTrackingWheelLocalizer
         packet.put("leftEncoder", leftEncoder.getCurrentPosition());
         packet.put("rightEncoder", rightEncoder.getCurrentPosition());
         packet.put("frontEncoder", centerEncoder.getCurrentPosition());
+        dashboard.sendTelemetryPacket(packet);
     }
 }

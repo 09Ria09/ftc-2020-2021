@@ -331,7 +331,7 @@ public class Drive extends MecanumDrive
         fieldOverlay.setStroke("#3F51B5");
         DashboardUtil.drawRobot(fieldOverlay, currentPose);
 
-        //dashboard.sendTelemetryPacket(packet);
+        dashboard.sendTelemetryPacket(packet);
     }
 
     public void waitForIdle()
@@ -474,7 +474,14 @@ public class Drive extends MecanumDrive
                 .build();
         followTrajectory(traj);
          */
-        turn(Global.GetAngleOfLineBetweenTwoPoints(pose.getX(), pose.getY(), x2, y2));
+        double tmp = Global.GetAngleOfLineBetweenTwoPoints(pose.getX(), pose.getY(), x2, y2) - pose.getHeading();
+        double angle;
+
+        if (Math.abs(tmp) < Math.abs(2 * Math.PI - tmp))
+            angle = tmp;
+        else
+            angle = 2 * Math.PI - tmp;
+        turnAsync(angle);
     }
 
     public void debugEncoders()

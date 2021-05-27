@@ -54,9 +54,9 @@ public class DriveConstants
      * motor encoders or have elected not to use them for velocity control, these values should be
      * empirically tuned.
      */
-    public static double kV = 0.01487;//0.01745;//0.01592; // 1.0 / rpmToVelocity(MAX_RPM);
-    public static double kA = 0.00034;//0.00020;//0.00036; // 0;
-    public static double kStatic = 0.10748;//0.07650; //0.09000; // 0;
+    public static double kV = 0.01465;//0.01487;//0.01745;//0.01592; // 1.0 / rpmToVelocity(MAX_RPM);
+    public static double kA = 0.0031;//0.00034;//0.00020;//0.00036; // 0;
+    public static double kStatic = 0.06735;//0.10748;//0.07650; //0.09000; // 0;
 
     /*
      * These values are used to generate the trajectories for you robot. To ensure proper operation,
@@ -65,17 +65,19 @@ public class DriveConstants
      * small and gradually increase them later after everything is working. All distance units are
      * inches.
      */
-    public static double MAX_VEL = 30;
-    public static double MAX_ACCEL = 30;
-    public static double MAX_ANG_VEL = 160;
-    public static double MAX_ANG_ACCEL = Math.toRadians(60);
+    public static double MAX_VEL = 62;
+    public static double MAX_ACCEL = 62;
+    public static double MAX_ANG_VEL = 4.21;
+    public static double MAX_ANG_ACCEL = Math.toRadians(180);
 
 
-    public static double encoderTicksToInches(double ticks) {
+    public static double encoderTicksToInches(double ticks)
+    {
         return WHEEL_RADIUS * 2 * Math.PI * GEAR_RATIO * ticks / TICKS_PER_REV;
     }
 
-    public static double rpmToVelocity(double rpm) {
+    public static double rpmToVelocity(double rpm)
+    {
         return rpm * GEAR_RATIO * 2 * Math.PI * WHEEL_RADIUS / 60.0;
     }
 
