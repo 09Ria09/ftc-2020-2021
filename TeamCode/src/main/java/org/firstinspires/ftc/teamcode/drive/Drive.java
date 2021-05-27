@@ -477,7 +477,7 @@ public class Drive extends MecanumDrive
         double tmp = Global.GetAngleOfLineBetweenTwoPoints(pose.getX(), pose.getY(), x2, y2) - pose.getHeading();
         double angle;
 
-        if (Math.abs(tmp) < Math.abs(2 * Math.PI - tmp))
+        if (tmp < Math.toRadians(180))
             angle = tmp;
         else
             angle = 2 * Math.PI - tmp;
